@@ -1,0 +1,17 @@
+frx/16.05.2018-char/head.c2a.pcabasis
+frx/16.05.2018-char/head.c2a.eigenvalues
+frx/16.05.2018-char/head_au.tex
+frx/16.05.2018-char/head_au.triangles
+frx/16.05.2018-char/head_au.verts
+frx/16.05.2018-char/classifier/train.posthub640_86_au_zero_sym_rs_03_11.extx1x16c30_pstv_nl_nl_12_20h-symm-v40.model
+frx/16.05.2018-char/supersynth30symmetry/head.3308.DA.c30.tm.pca2.86.blendshapes
+frx/16.05.2018-char/supersynth30symmetry/head.3308.DA.c30.tm.pca2.86.means
+MoMoFRX/edgetopology1.ef
+MoMoFRX/edgetopology1.ev
+MoMoFRX/head.3308.DA.c30.tm.pca2.86.blendshapes
+MoMoFRX/head.3308.DA.c30.tm.pca2.86.means
+MoMoFRX/head.verts
+MoMoFRX/head1.triangles
+MoMoFRX/head_au.tex
+flow/ssd_uint8.tflite
+flow/frx_prior.tflite
