@@ -15,13 +15,19 @@ public class GenerateTexture : MonoBehaviour
     private static int resolution = 512;
     private static RenderTextureReadWrite rtColorSpace;
     private Camera activeCamera;
+    private Material material;
+    private static readonly int _Color = Shader.PropertyToID("_Color");
+    private static Texture2D originMap;
+    private static Texture2D directionMap;
+
+
 
     #endregion
 
     private void Awake()
     {
         rtColorSpace = PlayerSettings.colorSpace == ColorSpace.Linear ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Default;
-
+        SetupMaterial();
     }
     private void Update()
     {
@@ -31,6 +37,32 @@ public class GenerateTexture : MonoBehaviour
             CreateSavedMeshCopy(savedFaceGameobject, scaleOffset);
             CreateOriginAndDirectionMap();
         }
+    }
+
+    private void SetupMaterial()
+    {
+        material = new Material(Shader.Find("Unlit/Transparent"));
+        material.name = "M_Material";
+        material.SetColor(_Color, new Color(0.47f, 0.58f, 1, 0.1f));
+
+    }
+
+    private static void DestroyRT(RenderTexture renderTexture)
+    {
+        renderTexture.Release();
+        DestroyImmediate(renderTexture);
+    }
+
+
+    private static Texture2D RenderTexture2Texture2D(RenderTexture renderTexture)
+    {
+        RenderTexture currentRT = RenderTexture.active;
+        RenderTexture.active = renderTexture;
+        Texture2D tex = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGBAFloat, false);
+        tex.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        tex.Apply();
+        RenderTexture.active = currentRT;
+        return tex;
     }
 
     private void CreateOriginAndDirectionMap()
@@ -50,6 +82,26 @@ public class GenerateTexture : MonoBehaviour
         activeCamera.clearFlags = CameraClearFlags.Color;
         activeCamera.backgroundColor = new Color(0, 0, 0, 0);
         activeCamera.targetTexture = renderTexture;
+
+        Material curentMaterial = material;
+        Shader shader = curentMaterial.shader;
+
+        // Origin map
+        originMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
+        curentMaterial.shader = Shader.Find("TB/UV2WorldPos");
+        activeCamera.Render();
+        originMap = RenderTexture2Texture2D(renderTexture);
+
+        // Direction map
+        directionMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
+        curentMaterial.shader = Shader.Find("TB/UV2Normal");
+        activeCamera.Render();
+        directionMap = RenderTexture2Texture2D(renderTexture);
+
+        curentMaterial.shader = shader;
+        activeCamera.targetTexture = null;
+        DestroyRT(renderTexture);
+
     }
 
     private static void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
