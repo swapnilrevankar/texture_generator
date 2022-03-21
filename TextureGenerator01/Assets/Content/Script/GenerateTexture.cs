@@ -1,22 +1,56 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 using BNB;
 
 public class GenerateTexture : MonoBehaviour
 {
     public GameObject banubaFaceGameobject;
     public GameObject savedFaceGameobject;
+    public float scaleOffset;
 
-    public float scaleOffset; 
-    private void Update() 
-        {
-            if (Input.GetKeyUp(KeyCode.L))
+    #region private varaibles
+    private static GameObject cloneGameobject;
+    private static int resolution = 512;
+    private static RenderTextureReadWrite rtColorSpace;
+    private Camera activeCamera;
+
+    #endregion
+
+    private void Awake()
+    {
+        rtColorSpace = PlayerSettings.colorSpace == ColorSpace.Linear ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Default;
+
+    }
+    private void Update()
+    {
+        if (Input.GetKeyUp(KeyCode.L))
         {
             CreateBanubaMeshCopy(banubaFaceGameobject);
             CreateSavedMeshCopy(savedFaceGameobject, scaleOffset);
+            CreateOriginAndDirectionMap();
         }
-        }
+    }
+
+    private void CreateOriginAndDirectionMap()
+    {
+        int renderLayer = 25;
+        RenderTexture renderTexture;
+        renderTexture = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGBFloat, rtColorSpace);
+
+        // Create instance camera
+        //if (activeCamera != null) DestroyImmediate(activeCamera.gameObject);
+        activeCamera = new GameObject("ActiveCamera").AddComponent<Camera>();
+        activeCamera.transform.position = cloneGameobject.transform.position + Vector3.forward * 5f;
+        activeCamera.transform.rotation = Quaternion.Euler(0, 180, 0);
+        activeCamera.orthographic = true;
+        activeCamera.orthographicSize = 0.5f;
+        activeCamera.cullingMask = 1 << renderLayer;
+        activeCamera.clearFlags = CameraClearFlags.Color;
+        activeCamera.backgroundColor = new Color(0, 0, 0, 0);
+        activeCamera.targetTexture = renderTexture;
+    }
 
     private static void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
     {
@@ -46,12 +80,13 @@ public class GenerateTexture : MonoBehaviour
         Material banubaMaterial = banubaMeshrenderer.material;
         Texture banubaTexture = banubaMaterial.mainTexture;
 
-        // Clone mesh 
-        GameObject cloneGameobject = Instantiate(gameObject);
+        // Clone mesh
+        cloneGameobject = Instantiate(gameObject);
+        cloneGameobject.layer = 25;
         MeshFilter cloneMeshFilter = cloneGameobject.GetComponent<MeshFilter>();
         cloneMeshFilter.mesh = cloneMeshFilter.mesh;
 
-        // Disable Banuba scripts 
+        // Disable Banuba scripts
         FaceMeshController cloneFaceMeshControllerScript = cloneGameobject.GetComponent<FaceMeshController>();
         cloneFaceMeshControllerScript.enabled = false;
 
@@ -64,71 +99,71 @@ public class GenerateTexture : MonoBehaviour
         cloneMaterial.SetTexture("_MainTex", cloneTexture);
 
         // Set material matrix like in Banuba
-        cloneMaterial.SetMatrix("_TextureMVP",banubaMaterial.GetMatrix("_TextureMVP"));
-        cloneMaterial.SetInt("_TextureRotate",banubaMaterial.GetInt("_TextureRotate"));
-        cloneMaterial.SetInt("_TextureYFlip",banubaMaterial.GetInt("_TextureYFlip"));
+        cloneMaterial.SetMatrix("_TextureMVP", banubaMaterial.GetMatrix("_TextureMVP"));
+        cloneMaterial.SetInt("_TextureRotate", banubaMaterial.GetInt("_TextureRotate"));
+        cloneMaterial.SetInt("_TextureYFlip", banubaMaterial.GetInt("_TextureYFlip"));
 
         // Assing material to cloned mesh
         MeshRenderer cloneMeshRenderer = cloneGameobject.GetComponent<MeshRenderer>();
         cloneMeshRenderer.material = cloneMaterial;
 
-        // Add mesh collider 
+        // Add mesh collider
         MeshCollider meshCollider = cloneGameobject.AddComponent<MeshCollider>();
 
-        // Normalize mesh 
+        // Normalize mesh
         NormalizeSize(cloneGameobject);
     }
 
     private static T[] GetAll<T>(GameObject root, bool includeInactiveChildren = false, bool exclude = true) where T : Component
+    {
+        if (!root)
         {
-            if (!root)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            if (exclude)
-            {
+        if (exclude)
+        {
 
-                List<T> rends = new List<T>();
-                foreach (T component in root.GetComponentsInChildren<T>(includeInactiveChildren))
+            List<T> rends = new List<T>();
+            foreach (T component in root.GetComponentsInChildren<T>(includeInactiveChildren))
+            {
+                if (component.GetComponent<ExcludeFromBake>() == null)
                 {
-                    if (component.GetComponent<ExcludeFromBake>() == null)
-                    {
-                        rends.Add(component);
-                    }
+                    rends.Add(component);
                 }
-
-                return rends.ToArray();
             }
 
-            return root.GetComponentsInChildren<T>();
+            return rends.ToArray();
         }
+
+        return root.GetComponentsInChildren<T>();
+    }
     private static Bounds ComputeBounds(GameObject root)
+    {
+        Quaternion currentRotation = root.transform.rotation;
+        root.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+
+        Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
+
+        Renderer[] rends = GetAll<Renderer>(root);
+        foreach (Renderer renderer in rends)
         {
-            Quaternion currentRotation = root.transform.rotation;
-            root.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
-
-            Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
-
-            Renderer[] rends = GetAll<Renderer>(root);
-            foreach (Renderer renderer in rends)
-            {
-                bounds.Encapsulate(renderer.bounds);
-            }
-
-            Vector3 localCenter = bounds.center - root.transform.position;
-            bounds.center = localCenter;
-            root.transform.rotation = currentRotation;
-
-            return bounds;
+            bounds.Encapsulate(renderer.bounds);
         }
+
+        Vector3 localCenter = bounds.center - root.transform.position;
+        bounds.center = localCenter;
+        root.transform.rotation = currentRotation;
+
+        return bounds;
+    }
     private static void NormalizeSize(GameObject obj)
-        {
-            Transform t = obj.transform;
-            t.localScale = Vector3.one;
-            Bounds bounds = ComputeBounds(obj);
-            Vector3 size = bounds.size;
-            float scale = 1 / Mathf.Max(size.x, Mathf.Max(size.y, size.z));
-            t.localScale *= scale;
-        }
+    {
+        Transform t = obj.transform;
+        t.localScale = Vector3.one;
+        Bounds bounds = ComputeBounds(obj);
+        Vector3 size = bounds.size;
+        float scale = 1 / Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+        t.localScale *= scale;
+    }
 }
