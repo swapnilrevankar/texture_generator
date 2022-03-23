@@ -144,6 +144,7 @@ public class GenerateTexture : MonoBehaviour
 
         // Clone mesh
         cloneGameobject = Instantiate(gameObject);
+        cloneGameobject.name = "H";
         cloneGameobject.layer = 25;
         MeshFilter cloneMeshFilter = cloneGameobject.GetComponent<MeshFilter>();
         cloneMeshFilter.mesh = cloneMeshFilter.mesh;
