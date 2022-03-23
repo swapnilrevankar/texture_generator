@@ -34,8 +34,8 @@ public class GenerateTexture : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.L))
         {
             CreateBanubaMeshCopy(banubaFaceGameobject);
-            CreateSavedMeshCopy(savedFaceGameobject, scaleOffset);
-            CreateOriginAndDirectionMap();
+            //CreateSavedMeshCopy(savedFaceGameobject, scaleOffset);
+            //CreateOriginAndDirectionMap();
         }
     }
 
