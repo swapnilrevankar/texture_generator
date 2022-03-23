@@ -8,6 +8,9 @@ public class GenerateTexture : MonoBehaviour
 {
     public GameObject banubaFaceGameobject;
     public GameObject savedFaceGameobject;
+    public GameObject[] jointNames;
+    public Mesh bakedMesh;
+    public GameObject userFace;
     public float scaleOffset;
 
     #region private varaibles
@@ -19,8 +22,7 @@ public class GenerateTexture : MonoBehaviour
     private static readonly int _Color = Shader.PropertyToID("_Color");
     private static Texture2D originMap;
     private static Texture2D directionMap;
-
-
+    private Vector3[] myVertices;
 
     #endregion
 
@@ -65,6 +67,8 @@ public class GenerateTexture : MonoBehaviour
         return tex;
     }
 
+
+
     private void CreateOriginAndDirectionMap()
     {
         int renderLayer = 25;
@@ -104,7 +108,7 @@ public class GenerateTexture : MonoBehaviour
 
     }
 
-    private static void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
+    private void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
     {
         /*=========================================================================
 
@@ -113,12 +117,18 @@ public class GenerateTexture : MonoBehaviour
 
         =========================================================================*/
 
+        /*
+        Bakup code
         GameObject cloneGameobject = Instantiate(gameObject);
         NormalizeSize(cloneGameobject);
         Vector3 scaleChange = new Vector3(scaleOffset, scaleOffset, scaleOffset);
         cloneGameobject.transform.localScale += scaleChange;
+        */
+
+
+
     }
-    private static void CreateBanubaMeshCopy(GameObject gameObject)
+    private void CreateBanubaMeshCopy(GameObject gameObject)
     {
         /*=========================================================================
 
@@ -164,6 +174,21 @@ public class GenerateTexture : MonoBehaviour
 
         // Normalize mesh
         NormalizeSize(cloneGameobject);
+
+        myVertices = cloneGameobject.GetComponent<MeshFilter>().mesh.vertices;
+        for (int i = 0; i < myVertices.Length; i++)
+        {
+            jointNames[i].transform.position = transform.TransformPoint(myVertices[i]);
+        }
+
+        SkinnedMeshRenderer skinnedMeshRenderer = savedFaceGameobject.GetComponent<SkinnedMeshRenderer>();
+        skinnedMeshRenderer.BakeMesh(bakedMesh);
+
+        MeshFilter userMeshFilter = userFace.GetComponent<MeshFilter>();
+        userMeshFilter.mesh = bakedMesh;
+        NormalizeSize(userFace);
+        Vector3 scaleChange = new Vector3(scaleOffset, scaleOffset, scaleOffset);
+        userFace.transform.localScale += scaleChange;
     }
 
     private static T[] GetAll<T>(GameObject root, bool includeInactiveChildren = false, bool exclude = true) where T : Component
