@@ -15,14 +15,16 @@ public class GenerateTexture : MonoBehaviour
 
     #region private varaibles
     private static GameObject cloneGameobject;
-    private static int resolution = 1024;
+    private static int resolution = 256;
     private static RenderTextureReadWrite rtColorSpace;
     private Camera activeCamera;
     private Material material;
     private static readonly int _Color = Shader.PropertyToID("_Color");
     private static Texture2D originMap;
     private static Texture2D directionMap;
+    private static Texture2D outputTex;
     private Vector3[] myVertices;
+    private RaycastHit hit;
 
     #endregion
 
@@ -67,6 +69,34 @@ public class GenerateTexture : MonoBehaviour
         return tex;
     }
 
+    public class WorldPoint
+    {
+        public Vector3 point; //world space point
+        public Vector3 normal; //world space normal
+        public bool mapped; //this will be false if the ray from cage to highpoly does not hit any surface
+
+        public WorldPoint(Vector3 p, Vector3 n, bool m)
+        {
+            point = p;
+            normal = n;
+            mapped = m;
+        }
+    }
+
+    private WorldPoint UvToWorld(int resolution, Vector2 uv, Texture2D originMap, Texture2D directionMap)
+    {
+        bool isMapped;
+        int x = 1 - (int)(uv.x * resolution);
+        int y = (int)(uv.y * resolution);
+        Color c;
+        c = originMap.GetPixel(x, y);
+        isMapped = !Mathf.Approximately(c.a, 0);
+        Vector3 worldPos = new Vector3(c.r, c.g, c.b);
+        c = directionMap.GetPixel(x, y);
+        Vector3 normal = new Vector3(c.r * 2 - 1, c.g * 2 - 1, c.b * 2 - 1);
+        return new WorldPoint(worldPos, normal, isMapped);
+    }
+
 
 
     private void CreateOriginAndDirectionMap()
@@ -93,14 +123,14 @@ public class GenerateTexture : MonoBehaviour
         Shader shader = currentMat.shader;
 
         // Origin map
-        originMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
+        originMap = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
         currentMat.shader = Shader.Find("TB/UV2WorldPos");
         activeCamera.Render();
         originMap = RenderTexture2Texture2D(rt);
         SaveManager.SaveTexture2D("Assets/originMap.png", originMap, SaveManager.Extension.PNG, false, false, true, true);
 
         // Direction map
-        directionMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
+        directionMap = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
         currentMat.shader = Shader.Find("TB/UV2Normal");
         activeCamera.Render();
         directionMap = RenderTexture2Texture2D(rt);
@@ -115,6 +145,8 @@ public class GenerateTexture : MonoBehaviour
         activeCamera.targetTexture = null;
         DestroyRT(rt);
 
+        outputTex = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
+
         // loop pixels
         for (int y = 0; y < resolution; y++)
         {
@@ -122,11 +154,37 @@ public class GenerateTexture : MonoBehaviour
             {
                 //normalize and invert x and y to get uv
                 Vector2 uv = new Vector2(1 - (float)x / resolution, 1 - (float)y / resolution);
-                Vector3 uvs = uv;
-                Debug.DrawLine(uvs, uvs + new Vector3(0, 0, 0.1f), Color.red, 15);
-            }
 
+                // convert uv coordinates into surface world space point and normal
+                WorldPoint worldPoint = UvToWorld(resolution, uv, originMap, directionMap);
+
+                // do not process pixel if the converted point isn't mapped
+                if (!worldPoint.mapped)
+                {
+                    continue;
+                }
+
+                // create ray
+                Ray ray = new Ray(worldPoint.point, -worldPoint.normal);
+                Debug.DrawRay(worldPoint.point, -worldPoint.normal, Color.red, 20);
+
+                // cast ray to check intersections
+                if (Physics.Raycast(ray, out hit))
+                {
+                    Debug.Log(hit.collider.gameObject.name);
+                    /*
+                    MeshRenderer meshRenderer = hit.collider.GetComponent<MeshRenderer>();
+                    Material mat = meshRenderer.sharedMaterial;
+                    Texture2D tex = (Texture2D)mat.GetTexture("_MainTex");
+                    Color pixel = tex.GetPixelBilinear(uv.x, uv.y);
+                    outputTex.SetPixel(x, y, pixel);
+                    */
+                }
+            }
         }
+        //outputTex.Apply();
+        //SaveManager.SaveTexture2D("Assets/outputTex.png", outputTex, SaveManager.Extension.PNG, false, false, true, true);
+
     }
 
     private void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
