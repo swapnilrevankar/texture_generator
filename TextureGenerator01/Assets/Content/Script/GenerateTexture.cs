@@ -176,6 +176,11 @@ public class GenerateTexture : MonoBehaviour
         // Normalize mesh
         NormalizeSize(cloneGameobject);
 
+        // Move mesh to uv tile
+        cloneGameobject.transform.position = new Vector3(0.5f, 0.5f, 0);
+        cloneGameobject.transform.rotation = Quaternion.Euler(0, 180, 0);
+
+
         myVertices = cloneGameobject.GetComponent<MeshFilter>().mesh.vertices;
         for (int i = 0; i < myVertices.Length; i++)
         {
@@ -190,6 +195,11 @@ public class GenerateTexture : MonoBehaviour
         NormalizeSize(userFace);
         Vector3 scaleChange = new Vector3(scaleOffset, scaleOffset, scaleOffset);
         userFace.transform.localScale += scaleChange;
+
+        // Move mesh to uv tile
+        userFace.transform.position = new Vector3(0.5f, 0.5f, 0);
+        userFace.transform.rotation = Quaternion.Euler(0, 180, 0);
+
     }
 
     private static T[] GetAll<T>(GameObject root, bool includeInactiveChildren = false, bool exclude = true) where T : Component
