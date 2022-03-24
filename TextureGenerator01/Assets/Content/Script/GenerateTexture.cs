@@ -101,7 +101,7 @@ public class GenerateTexture : MonoBehaviour
 
     private void CreateOriginAndDirectionMap()
     {
-        int renderLayer = 25;
+        // = 25;
 
         RenderTexture rt;
         rt = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGBFloat, rtColorSpace);
@@ -111,15 +111,15 @@ public class GenerateTexture : MonoBehaviour
         activeCamera.transform.position = new Vector3(0.5f, 0.5f, -2.0f);
         activeCamera.orthographic = true;
         activeCamera.orthographicSize = 0.5f;
-        activeCamera.cullingMask = 1 << renderLayer;
+        //activeCamera.cullingMask = 1 << renderLayer;
         activeCamera.targetTexture = rt;
         activeCamera.clearFlags = CameraClearFlags.Color;
         activeCamera.backgroundColor = new Color(0, 0, 0, 0);
 
-        Material currentMat = cloneGameobject.GetComponent<MeshRenderer>().material;
-        Matrix4x4 currentMatrix = currentMat.GetMatrix("_TextureMVP");
-        int currentIntRotate = currentMat.GetInt("_TextureRotate");
-        int currentIntFlip = currentMat.GetInt("_TextureYFlip");
+        Material currentMat = userFace.GetComponent<MeshRenderer>().material;
+        //Matrix4x4 currentMatrix = currentMat.GetMatrix("_TextureMVP");
+        //int currentIntRotate = currentMat.GetInt("_TextureRotate");
+        //int currentIntFlip = currentMat.GetInt("_TextureYFlip");
         Shader shader = currentMat.shader;
 
         // Origin map
@@ -138,9 +138,9 @@ public class GenerateTexture : MonoBehaviour
 
         // Restore
         currentMat.shader = shader;
-        currentMat.SetMatrix("_TextureMVP", currentMatrix);
-        currentMat.SetInt("_TextureRotate", currentIntRotate);
-        currentMat.SetInt("_TextureYFlip", currentIntFlip);
+        //currentMat.SetMatrix("_TextureMVP", currentMatrix);
+        //currentMat.SetInt("_TextureRotate", currentIntRotate);
+        //currentMat.SetInt("_TextureYFlip", currentIntFlip);
 
         activeCamera.targetTexture = null;
         DestroyRT(rt);
@@ -166,7 +166,7 @@ public class GenerateTexture : MonoBehaviour
 
                 // create ray
                 Ray ray = new Ray(worldPoint.point, -worldPoint.normal);
-                Debug.DrawRay(worldPoint.point, -worldPoint.normal, Color.red, 20);
+                Debug.DrawRay(worldPoint.point, -worldPoint.normal / 100, Color.red, 120);
 
                 // cast ray to check intersections
                 if (Physics.Raycast(ray, out hit))
