@@ -9520,6 +9520,8 @@ MonoBehaviour:
   bakedMesh: {fileID: 4300000, guid: 52767788f7808be4596aaf91660c7cca, type: 2}
   userFace: {fileID: 1829425903}
   scaleOffset: 0.0001
+  uv2WorldPos: {fileID: 2100000, guid: bf5f247f28cfb6945ac860417579864a, type: 2}
+  uv2Normal: {fileID: 2100000, guid: d58db9a18a8011743a6563f0defbdde1, type: 2}
 --- !u!4 &768225258
 Transform:
   m_ObjectHideFlags: 0
@@ -9531,7 +9533,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 888841058}
+  m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &768616557 stripped
@@ -10591,7 +10593,6 @@ Transform:
   m_Children:
   - {fileID: 238259256}
   - {fileID: 877027288}
-  - {fileID: 768225258}
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -12280,7 +12281,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: e849db87500aac54d82d336b5ccafb74, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e849db87500aac54d82d336b5ccafb74, type: 3}
       propertyPath: m_LocalPosition.x

@@ -15,7 +15,7 @@ public class GenerateTexture : MonoBehaviour
 
     #region private varaibles
     private static GameObject cloneGameobject;
-    private static int resolution = 512;
+    private static int resolution = 1024;
     private static RenderTextureReadWrite rtColorSpace;
     private Camera activeCamera;
     private Material material;
@@ -37,7 +37,7 @@ public class GenerateTexture : MonoBehaviour
         {
             CreateBanubaMeshCopy(banubaFaceGameobject);
             //CreateSavedMeshCopy(savedFaceGameobject, scaleOffset);
-            //CreateOriginAndDirectionMap();
+            CreateOriginAndDirectionMap();
         }
     }
 
@@ -72,40 +72,61 @@ public class GenerateTexture : MonoBehaviour
     private void CreateOriginAndDirectionMap()
     {
         int renderLayer = 25;
-        RenderTexture renderTexture;
-        renderTexture = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGBFloat, rtColorSpace);
 
-        // Create instance camera
-        //if (activeCamera != null) DestroyImmediate(activeCamera.gameObject);
-        activeCamera = new GameObject("ActiveCamera").AddComponent<Camera>();
-        activeCamera.transform.position = cloneGameobject.transform.position + Vector3.forward * 5f;
-        activeCamera.transform.rotation = Quaternion.Euler(0, 180, 0);
+        RenderTexture rt;
+        rt = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGBFloat, rtColorSpace);
+
+        // Create camera
+        activeCamera = new GameObject("Swap_Camera").AddComponent<Camera>();
+        activeCamera.transform.position = new Vector3(0.5f, 0.5f, -2.0f);
         activeCamera.orthographic = true;
         activeCamera.orthographicSize = 0.5f;
         activeCamera.cullingMask = 1 << renderLayer;
+        activeCamera.targetTexture = rt;
         activeCamera.clearFlags = CameraClearFlags.Color;
         activeCamera.backgroundColor = new Color(0, 0, 0, 0);
-        activeCamera.targetTexture = renderTexture;
 
-        Material curentMaterial = material;
-        Shader shader = curentMaterial.shader;
+        Material currentMat = cloneGameobject.GetComponent<MeshRenderer>().material;
+        Matrix4x4 currentMatrix = currentMat.GetMatrix("_TextureMVP");
+        int currentIntRotate = currentMat.GetInt("_TextureRotate");
+        int currentIntFlip = currentMat.GetInt("_TextureYFlip");
+        Shader shader = currentMat.shader;
 
         // Origin map
         originMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
-        curentMaterial.shader = Shader.Find("TB/UV2WorldPos");
+        currentMat.shader = Shader.Find("TB/UV2WorldPos");
         activeCamera.Render();
-        originMap = RenderTexture2Texture2D(renderTexture);
+        originMap = RenderTexture2Texture2D(rt);
+        SaveManager.SaveTexture2D("Assets/originMap.png", originMap, SaveManager.Extension.PNG, false, false, true, true);
 
         // Direction map
         directionMap = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
-        curentMaterial.shader = Shader.Find("TB/UV2Normal");
+        currentMat.shader = Shader.Find("TB/UV2Normal");
         activeCamera.Render();
-        directionMap = RenderTexture2Texture2D(renderTexture);
+        directionMap = RenderTexture2Texture2D(rt);
+        SaveManager.SaveTexture2D("Assets/directionMap.png", directionMap, SaveManager.Extension.PNG, false, false, true, true);
 
-        curentMaterial.shader = shader;
+        // Restore
+        currentMat.shader = shader;
+        currentMat.SetMatrix("_TextureMVP", currentMatrix);
+        currentMat.SetInt("_TextureRotate", currentIntRotate);
+        currentMat.SetInt("_TextureYFlip", currentIntFlip);
+
         activeCamera.targetTexture = null;
-        DestroyRT(renderTexture);
+        DestroyRT(rt);
 
+        // loop pixels
+        for (int y = 0; y < resolution; y++)
+        {
+            for (int x = 0; x < resolution; x++)
+            {
+                //normalize and invert x and y to get uv
+                Vector2 uv = new Vector2(1 - (float)x / resolution, 1 - (float)y / resolution);
+                Vector3 uvs = uv;
+                Debug.DrawLine(uvs, uvs + new Vector3(0, 0, 0.1f), Color.red, 15);
+            }
+
+        }
     }
 
     private void CreateSavedMeshCopy(GameObject gameObject, float scaleOffset)
