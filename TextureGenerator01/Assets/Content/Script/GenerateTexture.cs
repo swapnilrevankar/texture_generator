@@ -123,6 +123,8 @@ public class GenerateTexture : MonoBehaviour
         Material currentMat = userFace.GetComponent<MeshRenderer>().material;
         Shader shader = currentMat.shader;
 
+        cloneGameobject.SetActive(false);
+
         // Origin map
         originMap = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
         currentMat.shader = Shader.Find("TB/UV2WorldPos");
@@ -130,9 +132,6 @@ public class GenerateTexture : MonoBehaviour
         originMap = RenderTexture2Texture2D(rt);
         SaveManager.SaveTexture2D("Assets/originMap.png", originMap, SaveManager.Extension.PNG, false, false, true, true);
 
-        cloneMaterial.SetMatrix("_TextureMVP", textureMVP);
-        cloneMaterial.SetInt("_TextureRotate", textureRotate);
-        cloneMaterial.SetInt("_TextureYFlip", textureFlip);
 
         // Direction map
         directionMap = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
@@ -140,6 +139,8 @@ public class GenerateTexture : MonoBehaviour
         activeCamera.Render();
         directionMap = RenderTexture2Texture2D(rt);
         SaveManager.SaveTexture2D("Assets/directionMap.png", directionMap, SaveManager.Extension.PNG, false, false, true, true);
+
+        cloneGameobject.SetActive(true);
 
         cloneMaterial.SetMatrix("_TextureMVP", textureMVP);
         cloneMaterial.SetInt("_TextureRotate", textureRotate);
