@@ -25,6 +25,10 @@ public class GenerateTexture : MonoBehaviour
     private static Texture2D outputTex;
     private Vector3[] myVertices;
     private RaycastHit hit;
+    private Matrix4x4 textureMVP;
+    private int textureRotate;
+    private int textureFlip;
+    private Material cloneMaterial;
 
     #endregion
 
@@ -117,9 +121,6 @@ public class GenerateTexture : MonoBehaviour
         activeCamera.backgroundColor = new Color(0, 0, 0, 0);
 
         Material currentMat = userFace.GetComponent<MeshRenderer>().material;
-        //Matrix4x4 currentMatrix = currentMat.GetMatrix("_TextureMVP");
-        //int currentIntRotate = currentMat.GetInt("_TextureRotate");
-        //int currentIntFlip = currentMat.GetInt("_TextureYFlip");
         Shader shader = currentMat.shader;
 
         // Origin map
@@ -129,12 +130,20 @@ public class GenerateTexture : MonoBehaviour
         originMap = RenderTexture2Texture2D(rt);
         SaveManager.SaveTexture2D("Assets/originMap.png", originMap, SaveManager.Extension.PNG, false, false, true, true);
 
+        cloneMaterial.SetMatrix("_TextureMVP", textureMVP);
+        cloneMaterial.SetInt("_TextureRotate", textureRotate);
+        cloneMaterial.SetInt("_TextureYFlip", textureFlip);
+
         // Direction map
         directionMap = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
         currentMat.shader = Shader.Find("TB/UV2Normal");
         activeCamera.Render();
         directionMap = RenderTexture2Texture2D(rt);
         SaveManager.SaveTexture2D("Assets/directionMap.png", directionMap, SaveManager.Extension.PNG, false, false, true, true);
+
+        cloneMaterial.SetMatrix("_TextureMVP", textureMVP);
+        cloneMaterial.SetInt("_TextureRotate", textureRotate);
+        cloneMaterial.SetInt("_TextureYFlip", textureFlip);
 
         // Restore
         currentMat.shader = shader;
@@ -237,13 +246,19 @@ public class GenerateTexture : MonoBehaviour
         Graphics.CopyTexture(banubaTexture, cloneTexture);
 
         // Duplicate material
-        Material cloneMaterial = Instantiate(banubaMaterial);
+        cloneMaterial = Instantiate(banubaMaterial);
         cloneMaterial.SetTexture("_MainTex", cloneTexture);
 
+        // Get material matrix
+        textureMVP = banubaMaterial.GetMatrix("_TextureMVP");
+        textureRotate = banubaMaterial.GetInt("_TextureRotate");
+        textureFlip = banubaMaterial.GetInt("_TextureYFlip");
+
+
         // Set material matrix like in Banuba
-        cloneMaterial.SetMatrix("_TextureMVP", banubaMaterial.GetMatrix("_TextureMVP"));
-        cloneMaterial.SetInt("_TextureRotate", banubaMaterial.GetInt("_TextureRotate"));
-        cloneMaterial.SetInt("_TextureYFlip", banubaMaterial.GetInt("_TextureYFlip"));
+        cloneMaterial.SetMatrix("_TextureMVP", textureMVP);
+        cloneMaterial.SetInt("_TextureRotate", textureRotate);
+        cloneMaterial.SetInt("_TextureYFlip", textureFlip);
 
         // Assing material to cloned mesh
         MeshRenderer cloneMeshRenderer = cloneGameobject.GetComponent<MeshRenderer>();
